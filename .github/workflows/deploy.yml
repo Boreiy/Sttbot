@@ -1,0 +1,111 @@
+name: deploy
+
+on:
+  workflow_run:
+    workflows:
+      - ci
+    types:
+      - completed
+
+jobs:
+  deploy:
+    if: >-
+      ${{ github.event.workflow_run.conclusion == 'success' &&
+          github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    environment: prodaction
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Build binary
+        run: |
+          mkdir -p build
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o build/server ./cmd/bot
+
+      - name: Assemble environment file
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import pathlib
+
+          env_path = pathlib.Path('.env')
+
+          vars_data = json.loads(r'''${{ toJSON(vars) }}''')
+          secrets_data = json.loads(r'''${{ toJSON(secrets) }}''')
+
+          # Секреты/переменные, которые нужны только CI и не должны попадать в .env приложения
+          CI_ONLY_KEYS = {
+              "PRODACTION_SSH_KEY",
+              "PRODACTION_SSH_USER",
+              "PRODACTION_SERVER_IP",
+          }
+
+          def should_write(key, value):
+              if value in (None, ''):
+                  return False
+              if key in CI_ONLY_KEYS:
+                  return False
+              # игнорируем многострочные значения (ssh ключи, сертификаты и т.п.)
+              if isinstance(value, str) and ('\n' in value or '\r' in value):
+                  return False
+              return True
+
+          with env_path.open('w', encoding='utf-8') as env_file:
+              for source in (vars_data, secrets_data):
+                  for key, value in source.items():
+                      if should_write(key, value):
+                          env_file.write(f"{key}={value}\n")
+          PY
+
+      - name: Prepare deployment bundle
+        run: |
+          DEPLOY_DIR=deploy
+          rm -rf "$DEPLOY_DIR"
+          mkdir -p "$DEPLOY_DIR"
+          cp build/server "$DEPLOY_DIR/server"
+          cp Dockerfile "$DEPLOY_DIR/Dockerfile"
+          cp docker-compose.yml "$DEPLOY_DIR/docker-compose.yml"
+          cp .env "$DEPLOY_DIR/.env"
+          cp -r migrations "$DEPLOY_DIR/migrations"
+          cp -r configs "$DEPLOY_DIR/configs"
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.PRODACTION_SSH_KEY }}
+          SSH_HOST: ${{ secrets.PRODACTION_SERVER_IP }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          touch ~/.ssh/known_hosts
+          if [ -n "$SSH_HOST" ]; then
+            ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          fi
+
+      - name: Upload files to server
+        env:
+          SSH_USER: ${{ secrets.PRODACTION_SSH_USER }}
+          SSH_HOST: ${{ secrets.PRODACTION_SERVER_IP }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          TARGET="$SSH_USER@$SSH_HOST"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$TARGET" "mkdir -p ~/$REPO_NAME/data"
+          rsync -az --delete --exclude 'data/' -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" deploy/ "$TARGET:~/$REPO_NAME/"
+
+      - name: Apply docker compose
+        env:
+          SSH_USER: ${{ secrets.PRODACTION_SSH_USER }}
+          SSH_HOST: ${{ secrets.PRODACTION_SERVER_IP }}
+        run: |
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          TARGET="$SSH_USER@$SSH_HOST"
+          ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no "$TARGET" "set -euo pipefail && cd ~/$REPO_NAME && docker compose up -d --build"

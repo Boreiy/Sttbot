@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+permissions:
+  contents: write  # важно для git push от имени GITHUB_TOKEN
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0      # нужно, чтобы пушился тот же бранч
+          persist-credentials: true
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.3'
+          cache: true
+
+      # Автоформат и автопуш, если есть изменения
+      - name: Format (gofmt) and auto-push changes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          # Форматируем репозиторий
+          gofmt -w $(find . -name '*.go' -not -path './vendor/*')
+
+          # Если изменений нет — выходим
+          if git diff --quiet; then
+            echo "No formatting changes."
+            exit 0
+          fi
+
+          # Настраиваем автора коммита
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .
+          git commit -m "chore: auto gofmt"
+
+          # Определяем, куда пушить:
+          # - для push-ивентов: текущая ветка (github.ref_name)
+          # - для PR из того же репо: head-ветка PR (github.head_ref)
+          # - для PR из fork'а пуш невозможен — пропустим пуш, но не упадём
+          BRANCH="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+
+          # Если это PR из форка, у head repo другое имя — пушить нельзя
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
+            echo "PR from a fork: cannot push fixes. Please run gofmt locally."
+            exit 0
+          fi
+
+          git push origin "HEAD:${BRANCH}"
+
+      # Дальше просто проверки/линты/тесты
+      - name: Vet
+        run: go vet ./...
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: latest
+
+      - name: Test
+        run: go test ./... -cover

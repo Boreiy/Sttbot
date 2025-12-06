@@ -1,0 +1,34 @@
+services:
+  demoaibot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: templatebot
+    restart: unless-stopped
+
+    expose:
+      - "2005"
+
+    env_file:
+      - .env
+
+    volumes:
+      - ./data:/app/data
+
+    networks:
+      - traefik-net
+
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.templatebot.rule=Host(`templatebot.tgbots.site`)"
+      - "traefik.http.routers.templatebot.entrypoints=websecure"
+      - "traefik.http.routers.templatebot.tls=true"
+      - "traefik.http.routers.templatebot.tls.certresolver=cf"
+
+      - "traefik.http.services.templatebot.loadbalancer.server.port=2005"
+      - "traefik.http.routers.templatebot.service=templatebot"
+
+networks:
+  traefik-net:
+    external: true

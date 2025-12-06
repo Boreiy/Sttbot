@@ -1,0 +1,16 @@
+# Binaries
+/bin/
+/build/
+
+# Logs
+*.log
+
+# Coverage
+coverage.out
+
+# Environment files
+.env
+
+# Module cache
+vendor/
+
