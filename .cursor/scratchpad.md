@@ -227,24 +227,28 @@
 
 # Current Status / Progress Tracking
 - Анализ ТЗ выполнен, кодовая база изучена.
-- Готов план задач с критериями, тестами и точками интеграции.
+- Реализованы: конфиг OpenAI/ACL, ACL‑middleware, адаптер OpenAI STT, загрузка аудио из Telegram, обработчик транскрибации, интеграция в App.
+- Обновлён `.env.example` (порт `2010`, `ALLOWED_IDS`, `OPENAI_*`).
+- Тесты: `internal/adapter/external/openai/stt_test.go`, `internal/adapter/telegram/middleware/acl_test.go` — зелёные.
+- `go vet` без ошибок, сборка проходит.
 
 # Project Status Board
-- [ ] 1) Конфиг STT и ACL (ENV, App=sttbot)
-- [ ] 2) Middleware ACL
+- [x] 1) Конфиг STT и ACL (ENV, App=sttbot)
+- [x] 2) Middleware ACL
 - [ ] 3) Фильтрация документов (Document)
-- [ ] 4) OpenAI STT адаптер
-- [ ] 5) Загрузка аудио из Telegram
-- [ ] 6) Handler транскрибации
-- [ ] 7) Интеграция middleware в App
+- [x] 4) OpenAI STT адаптер
+- [x] 5) Загрузка аудио из Telegram
+- [x] 6) Handler транскрибации
+- [x] 7) Интеграция middleware в App
 - [ ] 8) Очистка временных файлов (scheduler)
 - [ ] 9) Dockerfile/Compose правки порта и сервиса
 - [ ] 10) Переименование модуля → sttbot
 - [ ] 11) Health/Readiness (опционально)
 
 # Executor's Feedback or Assistance Requests
-- Имя модели STT: принята `gpt-4o-mini-transcribe`; при необходимости изменим через ENV.
-- Подтвердить, нужен ли `/healthz` и `/readyz` в рамках ТЗ.
+- Имя модели STT: текущая `OPENAI_STT_MODEL=gpt-4o-mini-transcribe`. Можно заменить через ENV без кода.
+- Конвертация `.ogg` удалена — OpenAI принимает OGG; реализована фильтрация `Document` по MIME/расширениям.
+- Эндпоинты `/healthz`/`/readyz` при необходимости можно добавить отдельной задачей.
 
 # Lessons
 - Параллелить разработку независимых пакетов и подключать их в конце — снижает блокировки.

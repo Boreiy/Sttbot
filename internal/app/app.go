@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -12,10 +13,12 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 
+	"bot-go-template/internal/adapter/external/openai"
 	"bot-go-template/internal/adapter/telegram"
 	"bot-go-template/internal/adapter/telegram/handlers"
 	"bot-go-template/internal/adapter/telegram/middleware"
 	"bot-go-template/internal/config"
+	"bot-go-template/internal/platform/httpclient"
 	"bot-go-template/internal/platform/logger"
 )
 
@@ -36,7 +39,7 @@ func New() (*App, error) {
 		ConsoleLevel: cfg.Log.ConsoleLevel,
 		FileLevel:    cfg.Log.FileLevel,
 		File:         cfg.Log.File,
-		App:          "bot-go-template",
+		App:          "sttbot",
 	})
 	return &App{cfg: cfg, log: log}, nil
 }
@@ -49,7 +52,62 @@ func (a *App) Run() error {
 	defer stop()
 
 	rate := middleware.NewRateLimiter(time.Second)
-	handler := middleware.Chain(handlers.Handle, rate.Middleware)
+	acl := middleware.NewACL(a.cfg.AllowedIDs)
+	client := httpclient.New(httpclient.WithLogger(a.log))
+	tr := openai.NewTranscriber(client, a.cfg.OpenAI.BaseURL, a.cfg.OpenAI.STTModel, a.cfg.OpenAI.APIKey)
+
+	handlerFunc := func(ctx context.Context, b *bot.Bot, upd *models.Update) {
+		if msg := upd.Message; msg != nil {
+			if strings.HasPrefix(msg.Text, "/") {
+				handlers.Handle(ctx, b, upd)
+				return
+			}
+			if v := msg.Voice; v != nil {
+				name, ct, data, err := telegram.DownloadFile(ctx, b, a.cfg.Telegram.Token, v.FileID, client)
+				if err != nil {
+					return
+				}
+				txt, err := tr.Transcribe(ctx, name, ct, data)
+				if err != nil {
+					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					return
+				}
+				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				return
+			}
+			if aud := msg.Audio; aud != nil {
+				name, ct, data, err := telegram.DownloadFile(ctx, b, a.cfg.Telegram.Token, aud.FileID, client)
+				if err != nil {
+					return
+				}
+				txt, err := tr.Transcribe(ctx, name, ct, data)
+				if err != nil {
+					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					return
+				}
+				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				return
+			}
+			if doc := msg.Document; doc != nil {
+				if !telegram.IsSupportedAudio(doc.MimeType, doc.FileName) {
+					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "неподдерживаемый формат"})
+					return
+				}
+				name, ct, data, err := telegram.DownloadFile(ctx, b, a.cfg.Telegram.Token, doc.FileID, client)
+				if err != nil {
+					return
+				}
+				txt, err := tr.Transcribe(ctx, name, ct, data)
+				if err != nil {
+					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					return
+				}
+				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				return
+			}
+		}
+	}
+	handler := middleware.Chain(handlerFunc, rate.Middleware, acl.Middleware)
 
 	var disp *telegram.Dispatcher
 	opts := []bot.Option{
