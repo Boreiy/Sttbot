@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"strings"
 
-    "sttbot/internal/shared"
+	"sttbot/internal/shared"
 )
 
 // Example_wrap demonstrates how to add context to errors while preserving the original error.
