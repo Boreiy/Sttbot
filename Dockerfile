@@ -8,6 +8,6 @@ COPY server ./
 # Copy migrations
 COPY migrations ./migrations
 
-EXPOSE 2005
+EXPOSE 2010
 
 CMD ["./server"]

@@ -3,11 +3,11 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: templatebot
+    container_name: sttbot
     restart: unless-stopped
 
     expose:
-      - "2005"
+      - "2010"
 
     env_file:
       - .env
@@ -21,13 +21,13 @@ services:
     labels:
       - "traefik.enable=true"
 
-      - "traefik.http.routers.templatebot.rule=Host(`templatebot.tgbots.site`)"
-      - "traefik.http.routers.templatebot.entrypoints=websecure"
-      - "traefik.http.routers.templatebot.tls=true"
-      - "traefik.http.routers.templatebot.tls.certresolver=cf"
+      - "traefik.http.routers.sttbot.rule=Host(`sttbot.tgbots.site`)"
+      - "traefik.http.routers.sttbot.entrypoints=websecure"
+      - "traefik.http.routers.sttbot.tls=true"
+      - "traefik.http.routers.sttbot.tls.certresolver=cf"
 
-      - "traefik.http.services.templatebot.loadbalancer.server.port=2005"
-      - "traefik.http.routers.templatebot.service=templatebot"
+      - "traefik.http.services.sttbot.loadbalancer.server.port=2010"
+      - "traefik.http.routers.sttbot.service=sttbot"
 
 networks:
   traefik-net:
