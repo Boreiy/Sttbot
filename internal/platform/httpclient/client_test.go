@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-    httpclient "sttbot/internal/platform/httpclient"
+	httpclient "sttbot/internal/platform/httpclient"
 
 	"github.com/stretchr/testify/require"
 )
