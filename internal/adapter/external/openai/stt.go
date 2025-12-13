@@ -32,6 +32,7 @@ func NewTranscriber(c *httpclient.Client, baseURL, model, apiKey string) *Transc
 func (t *Transcriber) Transcribe(ctx context.Context, filename, contentType string, data []byte) (string, error) {
 	name := filename
 	body := data
+	defer func() { body = nil }()
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
 	fw, err := w.CreateFormFile("file", name)

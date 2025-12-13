@@ -70,9 +70,11 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					data = nil
 					return
 				}
 				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				data = nil
 				return
 			}
 			if aud := msg.Audio; aud != nil {
@@ -83,9 +85,11 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					data = nil
 					return
 				}
 				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				data = nil
 				return
 			}
 			if doc := msg.Document; doc != nil {
@@ -100,9 +104,11 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					data = nil
 					return
 				}
 				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				data = nil
 				return
 			}
 		}
