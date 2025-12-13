@@ -1,5 +1,5 @@
 services:
-  demoaibot:
+  sttbot:
     build:
       context: .
       dockerfile: Dockerfile

@@ -8,7 +8,7 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 
-	"bot-go-template/internal/adapter/telegram"
+    "sttbot/internal/adapter/telegram"
 )
 
 // RateLimiter restricts request frequency per user.

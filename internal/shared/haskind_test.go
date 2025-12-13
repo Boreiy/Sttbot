@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"bot-go-template/internal/shared"
+    "sttbot/internal/shared"
 )
 
 func TestHasKind(t *testing.T) {

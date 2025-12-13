@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	httpclient "bot-go-template/internal/platform/httpclient"
+    httpclient "sttbot/internal/platform/httpclient"
 
 	"github.com/stretchr/testify/require"
 )

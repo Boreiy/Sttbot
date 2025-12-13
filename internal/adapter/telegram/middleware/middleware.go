@@ -1,6 +1,6 @@
 package middleware
 
-import "bot-go-template/internal/adapter/telegram"
+import "sttbot/internal/adapter/telegram"
 
 // Middleware wraps telegram.HandlerFunc.
 type Middleware func(telegram.HandlerFunc) telegram.HandlerFunc

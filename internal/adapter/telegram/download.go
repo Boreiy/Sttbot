@@ -10,7 +10,7 @@ import (
 
 	"github.com/go-telegram/bot"
 
-	"bot-go-template/internal/platform/httpclient"
+	"sttbot/internal/platform/httpclient"
 )
 
 // DownloadFile загружает файл по file_id и возвращает имя, content-type и содержимое

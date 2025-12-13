@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"bot-go-template/internal/platform/httpclient"
+	"sttbot/internal/platform/httpclient"
 )
 
 // Transcriber выполняет транскрибацию аудио в текст через OpenAI API

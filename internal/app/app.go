@@ -13,13 +13,13 @@ import (
 	"github.com/go-telegram/bot"
 	"github.com/go-telegram/bot/models"
 
-	"bot-go-template/internal/adapter/external/openai"
-	"bot-go-template/internal/adapter/telegram"
-	"bot-go-template/internal/adapter/telegram/handlers"
-	"bot-go-template/internal/adapter/telegram/middleware"
-	"bot-go-template/internal/config"
-	"bot-go-template/internal/platform/httpclient"
-	"bot-go-template/internal/platform/logger"
+	"sttbot/internal/adapter/external/openai"
+	"sttbot/internal/adapter/telegram"
+	"sttbot/internal/adapter/telegram/handlers"
+	"sttbot/internal/adapter/telegram/middleware"
+	"sttbot/internal/config"
+	"sttbot/internal/platform/httpclient"
+	"sttbot/internal/platform/logger"
 )
 
 // App wires application components.

@@ -243,6 +243,8 @@
 - [ ] 8) Очистка временных файлов (scheduler)
 - [ ] 9) Dockerfile/Compose правки порта и сервиса
 - [ ] 10) Переименование модуля → sttbot
+ - [x] 9) Dockerfile/Compose правки порта и сервиса
+ - [x] 10) Переименование модуля → sttbot
 - [ ] 11) Health/Readiness (опционально)
 
 # Executor's Feedback or Assistance Requests

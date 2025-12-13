@@ -1,6 +1,6 @@
 package main
 
-import "bot-go-template/internal/app"
+import "sttbot/internal/app"
 
 func main() {
 	application, err := app.New()

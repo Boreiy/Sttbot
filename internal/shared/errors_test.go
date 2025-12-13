@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"bot-go-template/internal/shared"
+    "sttbot/internal/shared"
 )
 
 func TestWrap(t *testing.T) {
