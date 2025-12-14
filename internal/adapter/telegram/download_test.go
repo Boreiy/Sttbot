@@ -20,3 +20,20 @@ func TestIsSupportedAudio(t *testing.T) {
 		}
 	}
 }
+
+func TestNormalizeOGGName(t *testing.T) {
+	cases := []struct {
+		in, out string
+	}{
+		{"file.oga", "file.ogg"},
+		{"voice/file_0.oga", "voice/file_0.ogg"},
+		{"audio.ogg", "audio.ogg"},
+		{"doc.mp3", "doc.mp3"},
+	}
+
+	for i, c := range cases {
+		if got := normalizeOGGName(c.in); got != c.out {
+			t.Fatalf("case %d: got %s want %s", i, got, c.out)
+		}
+	}
+}

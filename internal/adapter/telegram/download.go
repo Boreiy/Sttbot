@@ -33,13 +33,21 @@ func DownloadFile(ctx context.Context, b *bot.Bot, token, fileID string, client 
 		_, _ = io.ReadAll(resp.Body)
 		return "", "", nil, io.ErrUnexpectedEOF
 	}
-	name := filepath.Base(f.FilePath)
+	name := normalizeOGGName(filepath.Base(f.FilePath))
 	ct := guessCT(name)
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", "", nil, err
 	}
 	return name, ct, data, nil
+}
+
+func normalizeOGGName(name string) string {
+	ext := strings.ToLower(filepath.Ext(name))
+	if ext != ".oga" {
+		return name
+	}
+	return strings.TrimSuffix(name, filepath.Ext(name)) + ".ogg"
 }
 
 func guessCT(name string) string {
