@@ -9,6 +9,7 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
+	"net/textproto"
 	"strings"
 	"time"
 
@@ -31,11 +32,18 @@ func NewTranscriber(c *httpclient.Client, baseURL, model, apiKey string) *Transc
 // Transcribe отправляет аудио и возвращает распознанный текст
 func (t *Transcriber) Transcribe(ctx context.Context, filename, contentType string, data []byte) (string, error) {
 	name := filename
+	ct := strings.TrimSpace(contentType)
+	if ct == "" {
+		ct = "application/octet-stream"
+	}
 	body := data
 	defer func() { body = nil }()
 	var buf bytes.Buffer
 	w := multipart.NewWriter(&buf)
-	fw, err := w.CreateFormFile("file", name)
+	fw, err := w.CreatePart(textproto.MIMEHeader{
+		"Content-Disposition": {fmt.Sprintf(`form-data; name="file"; filename="%s"`, name)},
+		"Content-Type":        {ct},
+	})
 	if err != nil {
 		return "", err
 	}

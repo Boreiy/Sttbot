@@ -17,7 +17,6 @@ type rtFunc func(*http.Request) (*http.Response, error)
 func (f rtFunc) RoundTrip(r *http.Request) (*http.Response, error) { return f(r) }
 
 func TestTranscribe_OK(t *testing.T) {
-	var capturedBody string
 	rt := rtFunc(func(r *http.Request) (*http.Response, error) {
 		if r.Method != http.MethodPost {
 			t.Fatalf("method=%s", r.Method)
@@ -25,8 +24,40 @@ func TestTranscribe_OK(t *testing.T) {
 		if !strings.HasSuffix(r.URL.Path, "/audio/transcriptions") {
 			t.Fatalf("path=%s", r.URL.Path)
 		}
-		b, _ := io.ReadAll(r.Body)
-		capturedBody = string(b)
+		mr, err := r.MultipartReader()
+		if err != nil {
+			t.Fatalf("multipart reader: %v", err)
+		}
+		var sawFile, sawModel bool
+		for {
+			part, err := mr.NextPart()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				t.Fatalf("read part: %v", err)
+			}
+			switch part.FormName() {
+			case "file":
+				sawFile = true
+				if ct := part.Header.Get("Content-Type"); ct != "audio/wav" {
+					t.Fatalf("content-type=%s", ct)
+				}
+				data, _ := io.ReadAll(part)
+				if string(data) != "data" {
+					t.Fatalf("file data mismatch: %q", string(data))
+				}
+			case "model":
+				sawModel = true
+				data, _ := io.ReadAll(part)
+				if string(data) != "gpt-4o-mini-transcribe" {
+					t.Fatalf("model=%s", string(data))
+				}
+			}
+		}
+		if !sawFile || !sawModel {
+			t.Fatalf("multipart parts missing: file=%v model=%v", sawFile, sawModel)
+		}
 		out := map[string]any{"text": "Привет"}
 		data, _ := json.Marshal(out)
 		return &http.Response{StatusCode: 200, Body: io.NopCloser(strings.NewReader(string(data)))}, nil
@@ -41,12 +72,6 @@ func TestTranscribe_OK(t *testing.T) {
 	}
 	if got != "Привет" {
 		t.Fatalf("got=%q", got)
-	}
-	if !strings.Contains(capturedBody, "name=\"model\"") {
-		t.Fatalf("model field missing")
-	}
-	if !strings.Contains(capturedBody, "name=\"file\"") {
-		t.Fatalf("file field missing")
 	}
 }
 
