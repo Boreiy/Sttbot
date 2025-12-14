@@ -231,6 +231,8 @@
 - Обновлён `.env.example` (порт `2010`, `ALLOWED_IDS`, `OPENAI_*`).
 - Тесты: `internal/adapter/external/openai/stt_test.go`, `internal/adapter/telegram/middleware/acl_test.go` — зелёные.
 - `go vet` без ошибок, сборка проходит.
+- Исправлены предупреждения golangci-lint (ineffassign) в `internal/app/app.go`.
+- Исправлены предупреждения golangci-lint (ineffassign) в `internal/app/app.go`; добавлена явная очистка буфера аудио после транскрибации.
 
 # Project Status Board
 - [x] 1) Конфиг STT и ACL (ENV, App=sttbot)
@@ -256,3 +258,4 @@
 - Не логировать PII/секреты — редактирование в логгере уже предусмотрено.
 - Для обработки потоков Telegram сохранять порядок по чатам через `Dispatcher` и параллелить между чатами.
 - Отказ от конвертации снижает сложность и CPU‑нагрузку; фильтрация Document минимизирует неожиданные форматы.
+- После чтения аудио освобождать буфер через `clear` и обнуление, чтобы ускорить возврат памяти GC.
