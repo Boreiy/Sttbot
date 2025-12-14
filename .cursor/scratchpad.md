@@ -234,6 +234,7 @@
 - Исправлены предупреждения golangci-lint (ineffassign) в `internal/app/app.go`.
 - Исправлены предупреждения golangci-lint (ineffassign) в `internal/app/app.go`; добавлена явная очистка буфера аудио после транскрибации.
 - Исправлена отправка аудио в OpenAI: теперь multipart-поле `file` получает корректный Content-Type, чтобы OGG/OGA не отвергались.
+- Исправлена нормализация имён голосовых файлов: `voice/*.oga` переименовываются в `.ogg` перед отправкой в OpenAI, чтобы избежать 400.
 
 # Project Status Board
 - [x] 1) Конфиг STT и ACL (ENV, App=sttbot)
