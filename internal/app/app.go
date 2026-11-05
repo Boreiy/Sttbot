@@ -54,7 +54,10 @@ func (a *App) Run() error {
 	rate := middleware.NewRateLimiter(time.Second)
 	acl := middleware.NewACL(a.cfg.AllowedIDs)
 	client := httpclient.New(httpclient.WithLogger(a.log))
-	tr := openai.NewTranscriber(client, a.cfg.OpenAI.BaseURL, a.cfg.OpenAI.STTModel, a.cfg.OpenAI.APIKey)
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.ResponseHeaderTimeout = 180 * time.Second
+	sttClient := httpclient.New(httpclient.WithLogger(a.log), httpclient.WithTimeout(180*time.Second), httpclient.WithTransport(transport))
+	tr := openai.NewTranscriber(sttClient, a.cfg.OpenAI.BaseURL, a.cfg.OpenAI.STTModel, a.cfg.OpenAI.APIKey, a.cfg.OpenAI.Mode)
 
 	handlerFunc := func(ctx context.Context, b *bot.Bot, upd *models.Update) {
 		if msg := upd.Message; msg != nil {
@@ -71,9 +74,12 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					a.log.Error("transcription failed", slog.Any("err", err))
 					return
 				}
-				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				if err := telegram.SendLongText(ctx, b, msg.Chat.ID, txt); err != nil {
+					a.log.Error("send transcription", slog.Any("err", err))
+				}
 				return
 			}
 			if aud := msg.Audio; aud != nil {
@@ -85,9 +91,12 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					a.log.Error("transcription failed", slog.Any("err", err))
 					return
 				}
-				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				if err := telegram.SendLongText(ctx, b, msg.Chat.ID, txt); err != nil {
+					a.log.Error("send transcription", slog.Any("err", err))
+				}
 				return
 			}
 			if doc := msg.Document; doc != nil {
@@ -103,9 +112,12 @@ func (a *App) Run() error {
 				txt, err := tr.Transcribe(ctx, name, ct, data)
 				if err != nil {
 					_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: "ошибка распознавания"})
+					a.log.Error("transcription failed", slog.Any("err", err))
 					return
 				}
-				_, _ = b.SendMessage(ctx, &bot.SendMessageParams{ChatID: msg.Chat.ID, Text: txt})
+				if err := telegram.SendLongText(ctx, b, msg.Chat.ID, txt); err != nil {
+					a.log.Error("send transcription", slog.Any("err", err))
+				}
 				return
 			}
 		}

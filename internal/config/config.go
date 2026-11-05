@@ -21,6 +21,7 @@ type Config struct {
 		Addr string `validate:"required"`
 	}
 	OpenAI struct {
+		Mode     string `validate:"required,oneof=classic omni"`
 		APIKey   string `validate:"required"`
 		BaseURL  string `validate:"required"`
 		STTModel string `validate:"required"`
@@ -45,9 +46,14 @@ func Load() (Config, error) {
 	c.Telegram.WebhookURL = os.Getenv("TELEGRAM_WEBHOOK_URL")
 	c.Telegram.WebhookSecret = os.Getenv("TELEGRAM_WEBHOOK_SECRET")
 	c.HTTP.Addr = getenv("HTTP_ADDR", ":2010")
+	c.OpenAI.Mode = strings.ToLower(getenv("STT_MODE", "omni"))
+	defaultURL, defaultModel := "https://api.selectel.ru/aig/v1", "qwen/qwen3.8-omni-flash"
+	if c.OpenAI.Mode == "classic" {
+		defaultURL, defaultModel = "https://api.openai.com/v1", "gpt-4o-mini-transcribe"
+	}
 	c.OpenAI.APIKey = os.Getenv("OPENAI_API_KEY")
-	c.OpenAI.BaseURL = getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
-	c.OpenAI.STTModel = getenv("OPENAI_STT_MODEL", "gpt-4o-mini-transcribe")
+	c.OpenAI.BaseURL = getenv("OPENAI_BASE_URL", defaultURL)
+	c.OpenAI.STTModel = getenv("OPENAI_STT_MODEL", defaultModel)
 	c.AllowedIDs = parseIDs(os.Getenv("ALLOWED_IDS"))
 	c.Log.ConsoleLevel = strings.ToLower(getenv("LOG_CONSOLE_LEVEL", "info"))
 	c.Log.FileLevel = strings.ToLower(getenv("LOG_FILE_LEVEL", "debug"))
