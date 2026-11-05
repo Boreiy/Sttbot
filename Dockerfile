@@ -11,3 +11,4 @@ COPY migrations ./migrations
 EXPOSE 2010
 
 CMD ["./server"]
+
