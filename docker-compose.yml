@@ -21,7 +21,7 @@ services:
     labels:
       - "traefik.enable=true"
 
-      - "traefik.http.routers.sttbot.rule=Host(`sttbot.tgbots.site`)"
+      - "traefik.http.routers.sttbot.rule=Host(`sttbot.glhf.site`)"
       - "traefik.http.routers.sttbot.entrypoints=websecure"
       - "traefik.http.routers.sttbot.tls=true"
       - "traefik.http.routers.sttbot.tls.certresolver=cf"
